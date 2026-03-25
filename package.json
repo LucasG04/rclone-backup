@@ -1,0 +1,16 @@
+{
+  "name": "rclone-backup",
+  "version": "1.0.0",
+  "description": "Multi-job rclone backup service powered by zx",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "mqtt": "^5.13.3",
+    "node-cron": "^4.2.1",
+    "yaml": "^2.8.1",
+    "zx": "^8.8.4"
+  }
+}

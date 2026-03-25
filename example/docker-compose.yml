@@ -1,0 +1,18 @@
+services:
+  backup:
+    image: ghcr.io/lucasg04/rclone-backup:latest
+    restart: unless-stopped
+    environment:
+      BACKUP_CONFIG_FILE: /config/backup/jobs.yaml
+    volumes:
+      - ./jobs.yaml:/config/backup/jobs.yaml:ro
+      - ./rclone.conf:/config/rclone/rclone.conf:ro
+      - /etc/localtime:/etc/localtime:ro
+      - app_data:/data/app:ro
+      - media_data:/data/media:ro
+
+volumes:
+  app_data:
+    external: true
+  media_data:
+    external: true

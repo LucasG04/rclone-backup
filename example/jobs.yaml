@@ -1,0 +1,28 @@
+global:
+  rcloneConfigFile: /config/rclone/rclone.conf
+  retentionDays: 7
+  mqtt:
+    enabled: false
+    host: ""
+    port: 1883
+    username: ""
+    password: ""
+    topicPrefix: homeassistant/sensor/rclone_backup
+    deviceName: Backup
+    uniqueIdPrefix: rclone_backup
+
+jobs:
+  - id: app-data
+    enabled: true
+    cron: "0 3 * * *"
+    source: /data/app
+    target: backup-remote:/archives/app
+    prefix: app-data
+    retentionDays: 14
+
+  - id: media
+    enabled: true
+    cron: "30 4 * * 0"
+    source: /data/media
+    target: backup-remote:/archives/media
+    prefix: media
