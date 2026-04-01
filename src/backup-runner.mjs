@@ -12,6 +12,14 @@ function getLastLogLine(content) {
   return lines.length > 0 ? lines[lines.length - 1] : "no stats available";
 }
 
+function log(jobId, message) {
+  console.log(`[${new Date().toISOString()}] [${jobId}] ${message}`);
+}
+
+function logError(jobId, message) {
+  console.error(`[${new Date().toISOString()}] [${jobId}] ${message}`);
+}
+
 export async function runBackupJob(job) {
   const startedAt = new Date();
   const dateTag = timestampForFile(startedAt);
@@ -29,8 +37,8 @@ export async function runBackupJob(job) {
 
     await fs.stat(job.rcloneConfigFile);
 
-    console.log(`[${job.id}] starting backup at ${startedAt.toISOString()}`);
-    await $`tar -czf ${archivePath} -C ${path.dirname(job.source)} ${path.basename(job.source)}`;
+    log(job.id, `starting backup`);
+    await $`tar -czf ${archivePath} --ignore-failed-read -C ${path.dirname(job.source)} ${path.basename(job.source)}`;
 
     await fs.rm(rcloneLogFile, { force: true });
 
@@ -39,7 +47,7 @@ export async function runBackupJob(job) {
       exitCode = 0;
     } catch (error) {
       exitCode = typeof error.exitCode === "number" ? error.exitCode : 1;
-      console.error(`[${job.id}] upload failed with exit code ${exitCode}`);
+      logError(job.id, `upload failed with exit code ${exitCode}`);
     }
 
     try {
@@ -54,12 +62,12 @@ export async function runBackupJob(job) {
         await $`rclone delete ${job.target} --config ${job.rcloneConfigFile} --min-age ${job.retentionDays}d`;
       } catch (retentionError) {
         const retentionCode = typeof retentionError.exitCode === "number" ? retentionError.exitCode : 1;
-        console.error(`[${job.id}] retention failed with exit code ${retentionCode}`);
+        logError(job.id, `retention failed with exit code ${retentionCode}`);
       }
     }
   } catch (error) {
     exitCode = 1;
-    console.error(`[${job.id}] backup setup failed: ${error.message}`);
+    logError(job.id, `backup setup failed: ${error.message}`);
   } finally {
     await fs.rm(archivePath, { force: true });
   }
@@ -73,11 +81,11 @@ export async function runBackupJob(job) {
       stats
     });
   } catch (error) {
-    console.error(`[${job.id}] mqtt publish failed: ${error.message}`);
+    logError(job.id, `mqtt publish failed: ${error.message}`);
   }
 
   if (exitCode === 0) {
-    console.log(`[${job.id}] backup completed successfully`);
+    log(job.id, `backup completed successfully`);
   }
 
   return {

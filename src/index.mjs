@@ -5,9 +5,13 @@ import { runBackupJob } from "./backup-runner.mjs";
 
 const activeRuns = new Set();
 
+function log(message) {
+  console.log(`[${new Date().toISOString()}] ${message}`);
+}
+
 async function runJobWithLock(job) {
   if (activeRuns.has(job.id)) {
-    console.warn(`[${job.id}] previous run still active, skipping`);
+    console.warn(`[${new Date().toISOString()}] [${job.id}] previous run still active, skipping`);
     return;
   }
 
@@ -30,7 +34,7 @@ async function main() {
   const scheduledTasks = [];
   for (const job of jobs) {
     if (!job.enabled) {
-      console.log(`[${job.id}] disabled`);
+      log(`[${job.id}] disabled`);
       continue;
     }
 
@@ -38,7 +42,7 @@ async function main() {
       throw new Error(`Invalid cron expression for job ${job.id}: ${job.cron}`);
     }
 
-    console.log(`[${job.id}] scheduled with cron '${job.cron}'`);
+    log(`[${job.id}] scheduled with cron '${job.cron}'`);
     const task = cron.schedule(job.cron, async () => {
       await runJobWithLock(job);
     });
@@ -46,7 +50,7 @@ async function main() {
   }
 
   const shutdown = async (signal) => {
-    console.log(`Received ${signal}, stopping scheduler`);
+    log(`Received ${signal}, stopping scheduler`);
     for (const task of scheduledTasks) {
       task.stop();
     }
@@ -56,10 +60,10 @@ async function main() {
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
 
-  console.log("Backup service started");
+  log("Backup service started");
 }
 
 main().catch((error) => {
-  console.error(`Fatal startup error: ${error.message}`);
+  console.error(`[${new Date().toISOString()}] Fatal startup error: ${error.message}`);
   process.exit(1);
 });
